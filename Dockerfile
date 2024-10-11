@@ -22,7 +22,7 @@ RUN chmod -R g+w /var/cache/
 RUN chmod -R g+w /var/run/
 
 # Copy built artifacts
-COPY --from=node-dev /src/build/ ./
+COPY --from=node-dev /src/dist/ ./
 
 # Copy nginx configuration folder
 COPY ./nginx/conf.d/nginx.conf /etc/nginx/conf.d/default.conf

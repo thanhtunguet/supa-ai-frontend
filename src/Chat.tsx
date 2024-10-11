@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 
 const { TextArea } = Input;
 
-const SupaGPT = "SupaGPT";
+const SupaGPT = "Susu";
 
 interface ChatMessage {
   user: string;

@@ -1,0 +1,22 @@
+.chatbot {
+  margin: 1rem 1rem;
+  padding: 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: calc(100vh - 2rem);
+  overflow: hidden;
+
+  .messages {
+    flex-grow: 1;
+    height: 500px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 1rem 1rem;
+    border-radius: 0.5rem;
+  }
+
+  .input {
+    margin: 0;
+  }
+}

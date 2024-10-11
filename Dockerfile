@@ -2,7 +2,7 @@ FROM node:alpine as node-dev
 
 WORKDIR /src
 
-COPY package.json yarn.lock .npmrc ./
+COPY package.json yarn.lock ./
 
 RUN  yarn install --development --network-timeout 100000
 

@@ -16,7 +16,9 @@ interface ChatMessage {
 
 interface ChatState {
   messages: ChatMessage[];
+
   isAITyping: boolean;
+  
   allowUserInput: boolean;
 }
 
@@ -37,7 +39,7 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
     case "USER_SEND":
       return {
         ...state,
-        messages: [...state.messages, { user: "You", message: action.payload }],
+        messages: [...state.messages, { user: action.payload.split(':')[0], message: action.payload.split(':')[1] }],
         allowUserInput: false, // Disable user input until AI completes its response
       };
 
@@ -73,6 +75,8 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
 
 const Chat: React.FC = () => {
   const [input, setInput] = useState<string>("");
+  const [username, setUsername] = useState<string>(""); // State to store the user's name
+  const [isUsernameSet, setIsUsernameSet] = useState<boolean>(false); // To track if the username is set
   const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
@@ -98,19 +102,27 @@ const Chat: React.FC = () => {
     connectToHub();
   }, []);
 
+  const handleUsernameSubmit = () => {
+    if (username.trim() === "") {
+      antdMessage.warning("Please enter a username.");
+      return;
+    }
+    setIsUsernameSet(true); // Mark username as set
+  };
+
   const sendMessage = async () => {
     if (input.trim() === "") {
       antdMessage.warning("Please enter a message before sending.");
       return;
     }
 
-    // Push the user command
-    dispatch({ type: "USER_SEND", payload: input });
+    // Push the user command with the username
+    dispatch({ type: "USER_SEND", payload: `${username}:${input}` });
 
     if (connection) {
       // Start AI typing and send message to backend
       dispatch({ type: "AI_START_TYPING", payload: "" });
-      await connection.invoke("SendMessage", "User", input);
+      await connection.invoke("SendMessage", username, [...state.messages, { user: username, message: input }]);
       setInput(""); // Clear input field
 
       // Simulate a 2-second delay to determine if AI has completed typing
@@ -129,49 +141,63 @@ const Chat: React.FC = () => {
 
   return (
     <div className="chatbot">
-      <div
-      className="messages"
-        ref={chatBoxRef}>
-        <List
-          bordered
-          dataSource={state.messages}
-          renderItem={(msg, index) => (
-            <List.Item key={index}>
-              {msg.isMarkdown ? (
-                <Typography.Text>
-                  <strong>{msg.user}</strong>: <ReactMarkdown>{msg.message}</ReactMarkdown>
-                </Typography.Text>
-              ) : (
-                <Typography.Text>
-                  <strong>{msg.user}</strong>: {msg.message}
-                </Typography.Text>
+      {!isUsernameSet ? (
+        <div>
+          <Input
+            placeholder="Enter your username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            style={{ marginBottom: "10px" }}
+          />
+          <Button type="primary" onClick={handleUsernameSubmit}>
+            Start Chatting
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="messages" ref={chatBoxRef}>
+            <List
+              bordered
+              dataSource={state.messages}
+              renderItem={(msg, index) => (
+                <List.Item key={index}>
+                  {msg.isMarkdown ? (
+                    <Typography.Text>
+                      <strong>{msg.user}</strong>: <ReactMarkdown>{msg.message}</ReactMarkdown>
+                    </Typography.Text>
+                  ) : (
+                    <Typography.Text>
+                      <strong>{msg.user}</strong>: {msg.message}
+                    </Typography.Text>
+                  )}
+                </List.Item>
               )}
-            </List.Item>
-          )}
-        />
-      </div>
+            />
+          </div>
 
-      <TextArea
-      className="input"
-        rows={4}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Type your message..."
-        disabled={!state.allowUserInput} // Disable input while AI is typing
-      />
+          <TextArea
+            className="input"
+            rows={4}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            disabled={!state.allowUserInput} // Disable input while AI is typing
+          />
 
-      <div>
-      <Button
-        className="send-button"
-        type="primary"
-        icon={<SendOutlined />}
-        onClick={sendMessage}
-        block
-        disabled={!state.allowUserInput} // Disable button while AI is typing
-      >
-          Send
-        </Button>
-      </div>
+          <div>
+            <Button
+              className="send-button"
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={sendMessage}
+              block
+              disabled={!state.allowUserInput} // Disable button while AI is typing
+            >
+              Send
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

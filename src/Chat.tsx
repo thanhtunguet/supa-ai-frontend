@@ -28,6 +28,7 @@ const Chat: React.FC = () => {
   });
 
   const [model, setModel] = React.useState<string>("");
+  const [endpoint, setEndpoint] = React.useState<string | undefined>();
   const [models, setModels] = React.useState<AiModel[]>([]);
 
   const inputRef = React.useRef<InputRef>(null);
@@ -110,6 +111,7 @@ const Chat: React.FC = () => {
           model: model,
           systemPrompt,
           name: username,
+          endpoint,
         });
         setInput(""); // Clear input field
 
@@ -119,7 +121,7 @@ const Chat: React.FC = () => {
         }, 2000);
       }
     },
-    [connection, dispatch, input, state.messages, username, model, systemPrompt],
+    [connection, dispatch, input, state.messages, username, model, systemPrompt, endpoint],
   );
 
   // Scroll to the bottom when the message list changes
@@ -193,6 +195,14 @@ const Chat: React.FC = () => {
                       </Select.Option>
                     ))}
                   </Select>
+
+                  <Input
+                    className="my-4"
+                    placeholder="https://gpt.thanhtunguet.info/v1"
+                    defaultValue={endpoint}
+                    onChange={(e) => {
+                      setEndpoint(e.target.value);
+                    }} />
                 </Col>
                 <Col span={12}>
                   <Input.TextArea

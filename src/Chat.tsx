@@ -1,6 +1,6 @@
-import { SendOutlined } from "@ant-design/icons";
+import { PlusOutlined, SendOutlined } from "@ant-design/icons";
 import * as signalR from "@microsoft/signalr";
-import { message as antdMessage, Button, Col, Collapse, Input, List, Row, Select, Typography } from "antd";
+import { message as antdMessage, Button, Col, Collapse, Input, InputRef, List, Row, Select, Typography } from "antd";
 import axios from "axios";
 import React from "react";
 import ReactMarkdown from "react-markdown";
@@ -30,6 +30,8 @@ const Chat: React.FC = () => {
   const [model, setModel] = React.useState<string>("");
   const [models, setModels] = React.useState<AiModel[]>([]);
 
+  const inputRef = React.useRef<InputRef>(null);
+
   React.useEffect(() => {
     axios.get("/api/models").then((response) => {
       setModels(response.data);
@@ -43,6 +45,15 @@ const Chat: React.FC = () => {
   }, []);
 
   const chatBoxRef = React.useRef<HTMLDivElement>(null); // Ref for the chat container
+
+  const handleAddItem = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+    e.preventDefault();
+    const value = inputRef.current?.input?.value;
+    if (value) {
+      setModels([...models, { name: value, isDefault: false }]);
+    }
+  };
+
 
   React.useEffect(() => {
     const connectToHub = async () => {
@@ -148,11 +159,34 @@ const Chat: React.FC = () => {
             label: "Settings",
             children: [
               <Row gutter={12}>
-                <Col span={6}>
+                <Col span={4}>
                   <Input placeholder="Username" value={username} disabled={true} />
                 </Col>
-                <Col span={6}>
-                  <Select style={{ width: "100%" }} value={model} onChange={(value) => setModel(value)}>
+                <Col span={8}>
+                  <Select
+                    className="w-100"
+                    value={model}
+                    onChange={(value) => setModel(value)}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <div className="d-flex align-items-center w-100 px-2 py-2">
+                          <div className="flex-grow-1">
+                            <Input
+                              className="flex-grow-1"
+                              placeholder="Enter model name"
+                              ref={inputRef}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div className="flex-shrink-1">
+                            <Button type="text" icon={<PlusOutlined />} onClick={handleAddItem}>
+                              Add model
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}>
                     {models.map((model) => (
                       <Select.Option key={model.name} value={model.name}>
                         {model.name}
@@ -161,7 +195,11 @@ const Chat: React.FC = () => {
                   </Select>
                 </Col>
                 <Col span={12}>
-                  <Input.TextArea rows={4} placeholder="System Prompt" value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} />
+                  <Input.TextArea
+                    rows={4}
+                    placeholder="System Prompt"
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)} />
                 </Col>
               </Row>
             ]

@@ -19,21 +19,24 @@ enum HubAction {
 
 const Chat: React.FC = () => {
   const [systemPrompt, setSystemPrompt] = React.useState<string>("Bạn là trợ lý AI tiếng Việt có tên Susu, giúp người dùng trả lời các câu hỏi bằng tiếng Việt trong khả năng kiến thức tốt nhất mà bạn có trong mọi lĩnh vực.");
+  const [username] = React.useState<string>("User");
   const [input, setInput] = React.useState<string>("");
-  const [username] = React.useState<string>("User"); // State to store the user's name
-  const [connection, setConnection] = React.useState<signalR.HubConnection | null>();
+
   const [state, dispatch] = React.useReducer(chatReducer, {
     messages: [],
     isAITyping: false,
     allowUserInput: true,
   });
 
-  const [model, setModel] = React.useState<string>("");
+  const [model, setModel] = React.useState<string | undefined>();
   const [models, setModels] = React.useState<AiModel[]>([]);
+  const modelInputRef = React.useRef<InputRef>(null);
+
   const [endpoint, setEndpoint] = React.useState<string | undefined>();
   const [endpoints, setEndpoints] = React.useState<AiEndpoint[]>([]);
+  const endpointInputRef = React.useRef<InputRef>(null);
 
-  const inputRef = React.useRef<InputRef>(null);
+
 
   React.useEffect(() => {
     Promise.all([
@@ -57,15 +60,23 @@ const Chat: React.FC = () => {
 
   const chatBoxRef = React.useRef<HTMLDivElement>(null); // Ref for the chat container
 
-  const handleAddItem = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+  const handleAddModel = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     e.preventDefault();
-    const value = inputRef.current?.input?.value;
+    const value = modelInputRef.current?.input?.value;
     if (value) {
       setModels([...models, { name: value, isDefault: false }]);
     }
   };
 
+  const handleAddEndpoint = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+    e.preventDefault();
+    const value = modelInputRef.current?.input?.value;
+    if (value) {
+      setEndpoints([...endpoints, { name: value, url: value, defaultModel: model, }]);
+    }
+  };
 
+  const [connection, setConnection] = React.useState<signalR.HubConnection | null>();
   React.useEffect(() => {
     const connectToHub = async () => {
       const conn = new signalR.HubConnectionBuilder()
@@ -152,12 +163,13 @@ const Chat: React.FC = () => {
               <List.Item key={index}>
                 {msg.isMarkdown ? (
                   <Typography.Text>
-                    <strong>{msg.user}</strong>:{" "}
+                    <strong>{msg.user}</strong>:
                     <ReactMarkdown>{msg.message}</ReactMarkdown>
                   </Typography.Text>
                 ) : (
                   <Typography.Text>
-                    <strong>{msg.user}</strong>: {msg.message}
+                    <strong>{msg.user}</strong>:
+                    <ReactMarkdown>{msg.message}</ReactMarkdown>
                   </Typography.Text>
                 )}
               </List.Item>
@@ -170,7 +182,7 @@ const Chat: React.FC = () => {
             key: "1",
             label: "Settings",
             children: [
-              <Row gutter={12}>
+              <Row gutter={12} key="settings">
                 <Col span={4}>
                   <Input placeholder="Username" value={username} disabled={true} />
                 </Col>
@@ -188,20 +200,20 @@ const Chat: React.FC = () => {
                             <Input
                               className="flex-grow-1"
                               placeholder="Enter model name"
-                              ref={inputRef}
+                              ref={modelInputRef}
                               onKeyDown={(e) => e.stopPropagation()}
                             />
                           </div>
                           <div className="flex-shrink-1">
-                            <Button type="text" icon={<PlusOutlined />} onClick={handleAddItem}>
+                            <Button type="text" icon={<PlusOutlined />} onClick={handleAddModel}>
                               Add model
                             </Button>
                           </div>
                         </div>
                       </>
                     )}>
-                    {models.map((model) => (
-                      <Select.Option key={model.name} value={model.name}>
+                    {models.map((model, index) => (
+                      <Select.Option key={index} value={model.name}>
                         {model.name}
                       </Select.Option>
                     ))}
@@ -226,12 +238,12 @@ const Chat: React.FC = () => {
                             <Input
                               className="flex-grow-1"
                               placeholder="Enter endpoint url"
-                              ref={inputRef}
+                              ref={endpointInputRef}
                               onKeyDown={(e) => e.stopPropagation()}
                             />
                           </div>
                           <div className="flex-shrink-1">
-                            <Button type="text" icon={<PlusOutlined />} onClick={handleAddItem}>
+                            <Button type="text" icon={<PlusOutlined />} onClick={handleAddEndpoint}>
                               Add endpoint
                             </Button>
                           </div>
@@ -239,7 +251,7 @@ const Chat: React.FC = () => {
                       </>
                     )}>
                     {endpoints.map((endpoint, index) => (
-                      <Select.Option key={`${endpoint.url}-${index}`} value={endpoint.url}>
+                      <Select.Option key={index} value={endpoint.url}>
                         {endpoint.name}
                       </Select.Option>
                     ))}

@@ -5,6 +5,7 @@ import axios from "axios";
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import { SupaGPT } from "./config/consts";
+import { AiEndpoint } from "./models/AiEndpoint";
 import { AiModel } from "./models/AiModel";
 import { ChatActionType, chatReducer } from "./reducers/chat-reducer";
 
@@ -28,21 +29,30 @@ const Chat: React.FC = () => {
   });
 
   const [model, setModel] = React.useState<string>("");
-  const [endpoint, setEndpoint] = React.useState<string | undefined>();
   const [models, setModels] = React.useState<AiModel[]>([]);
+  const [endpoint, setEndpoint] = React.useState<string | undefined>();
+  const [endpoints, setEndpoints] = React.useState<AiEndpoint[]>([]);
 
   const inputRef = React.useRef<InputRef>(null);
 
   React.useEffect(() => {
-    axios.get("/api/models").then((response) => {
-      setModels(response.data);
-      if (response.data.length > 0) {
-        const defaultModel = response.data.find((model: AiModel) => model.isDefault);
-        if (defaultModel) {
-          setModel(defaultModel.name);
+    Promise.all([
+      axios.get("/api/models").then((response) => response.data),
+      axios.get("/api/endpoints").then((response) => response.data),
+    ])
+      .then((values) => {
+        const [models, endpoints] = values as unknown as [AiModel[], AiEndpoint[]];
+        setModels(models);
+        setEndpoints(endpoints);
+
+        if (models.length > 0) {
+          const defaultModel = models.find((m) => m.isDefault);
+          if (defaultModel) {
+            setModel(defaultModel.name);
+          }
         }
-      }
-    });
+
+      });
   }, []);
 
   const chatBoxRef = React.useRef<HTMLDivElement>(null); // Ref for the chat container
@@ -167,6 +177,7 @@ const Chat: React.FC = () => {
                 <Col span={8}>
                   <Select
                     className="w-100"
+                    placeholder="Select model"
                     value={model}
                     onChange={(value) => setModel(value)}
                     dropdownRender={(menu) => (
@@ -196,13 +207,43 @@ const Chat: React.FC = () => {
                     ))}
                   </Select>
 
-                  <Input
-                    className="my-4"
-                    placeholder="https://gpt.thanhtunguet.info/v1"
-                    defaultValue={endpoint}
-                    onChange={(e) => {
-                      setEndpoint(e.target.value);
-                    }} />
+                  <Select
+                    className="w-100 my-4"
+                    placeholder="Select endpoint"
+                    value={endpoint}
+                    onChange={(value) => {
+                      const endpoint = endpoints.find((e) => e.url === value);
+                      setEndpoint(value);
+                      if (endpoint) {
+                        setModel(endpoint.defaultModel);
+                      }
+                    }}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <div className="d-flex align-items-center w-100 px-2 py-2">
+                          <div className="flex-grow-1">
+                            <Input
+                              className="flex-grow-1"
+                              placeholder="Enter endpoint url"
+                              ref={inputRef}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div className="flex-shrink-1">
+                            <Button type="text" icon={<PlusOutlined />} onClick={handleAddItem}>
+                              Add endpoint
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}>
+                    {endpoints.map((endpoint, index) => (
+                      <Select.Option key={`${endpoint.url}-${index}`} value={endpoint.url}>
+                        {endpoint.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
                 </Col>
                 <Col span={12}>
                   <Input.TextArea

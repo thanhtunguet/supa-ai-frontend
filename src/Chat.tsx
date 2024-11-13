@@ -72,7 +72,7 @@ const Chat: React.FC = () => {
     e.preventDefault();
     const value = modelInputRef.current?.input?.value;
     if (value) {
-      setEndpoints([...endpoints, { name: value, url: value, defaultModel: model, }]);
+      setEndpoints([...endpoints, { name: value, url: value, defaultModel: model ?? 'arcee-vylinh', }]);
     }
   };
 

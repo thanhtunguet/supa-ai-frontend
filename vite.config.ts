@@ -9,9 +9,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://supa-ai-demo.supa.vn',
+        target: 'https://gpt.thanhtunguet.info',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+      },
+      '/v1': {
+        target: 'https://gpt.thanhtunguet.info',
+        changeOrigin: true,
       }
     }
   }

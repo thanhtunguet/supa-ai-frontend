@@ -5,6 +5,7 @@ import axios from "axios";
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import { SupaGPT } from "./config/consts";
+import { useSystemPrompt } from "./hooks/use-system-prompt";
 import { AiEndpoint } from "./models/AiEndpoint";
 import { AiModel } from "./models/AiModel";
 import { ChatActionType, chatReducer } from "./reducers/chat-reducer";
@@ -18,7 +19,8 @@ enum HubAction {
 }
 
 const Chat: React.FC = () => {
-  const [systemPrompt, setSystemPrompt] = React.useState<string>("Bạn là trợ lý AI tiếng Việt có tên Susu, giúp người dùng trả lời các câu hỏi bằng tiếng Việt trong khả năng kiến thức tốt nhất mà bạn có trong mọi lĩnh vực.");
+  const [systemPrompt, handleSetSystemPrompt] = useSystemPrompt();
+
   const [username] = React.useState<string>("User");
   const [input, setInput] = React.useState<string>("");
 
@@ -262,7 +264,7 @@ const Chat: React.FC = () => {
                     rows={4}
                     placeholder="System Prompt"
                     value={systemPrompt}
-                    onChange={(e) => setSystemPrompt(e.target.value)} />
+                    onChange={(e) => handleSetSystemPrompt(e.target.value)} />
                 </Col>
               </Row>
             ]
